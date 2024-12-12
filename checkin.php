@@ -41,14 +41,35 @@ if (!preg_match('/^[0-9]{10,15}$/', $phone)) {
     exit();
 }
 
+// Generate a unique 4-character code
+function generateCode() {
+    $letters = substr(str_shuffle("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 2);
+    $numbers = substr(str_shuffle("0123456789"), 0, 2);
+    return $letters . $numbers;
+}
+
+$uniqueCode = generateCode();
+
 try {
+    // Check for code uniqueness
+    do {
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM check_ins WHERE code = :code");
+        $stmt->bindParam(':code', $uniqueCode);
+        $stmt->execute();
+        $exists = $stmt->fetchColumn();
+        if ($exists > 0) {
+            $uniqueCode = generateCode();
+        }
+    } while ($exists > 0);
+
     // Insert check-in record into database
     $stmt = $conn->prepare("INSERT INTO check_ins (
-        full_name, email, address, phone, visit_intent, personal_effect, visit_purpose, appointment_details
+        code, full_name, email, address, phone, visit_intent, personal_effect, visit_purpose, appointment_details, status
     ) VALUES (
-        :full_name, :email, :address, :phone, :visit_intent, :personal_effect, :visit_purpose, :appointment_details
+        :code, :full_name, :email, :address, :phone, :visit_intent, :personal_effect, :visit_purpose, :appointment_details, 'pending'
     )");
 
+    $stmt->bindParam(':code', $uniqueCode);
     $stmt->bindParam(':full_name', $full_name);
     $stmt->bindParam(':email', $email);
     $stmt->bindParam(':address', $address);
@@ -59,7 +80,7 @@ try {
     $stmt->bindParam(':appointment_details', $appointment_details);
 
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Check-in recorded successfully']);
+        echo json_encode(['success' => true, 'message' => 'Check-in recorded successfully', 'code' => $uniqueCode]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to record check-in']);
     }

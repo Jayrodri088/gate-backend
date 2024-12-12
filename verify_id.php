@@ -1,5 +1,5 @@
 <?php
-header('Content-Type: application/json');
+// header('Content-Type: application/json');
 require_once 'config/dbconfig.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
