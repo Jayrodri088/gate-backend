@@ -80,7 +80,14 @@ try {
     $stmt->bindParam(':appointment_details', $appointment_details);
 
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Check-in recorded successfully', 'code' => $uniqueCode]);
+        // Retrieve the ID of the newly inserted entry
+        $lastInsertId = $conn->lastInsertId();
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Check-in recorded successfully', 
+            'code' => $uniqueCode, 
+            'id' => $lastInsertId
+        ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to record check-in']);
     }
