@@ -3,7 +3,7 @@
 $host = 'localhost';
 $db_name = 'gate_pass';
 $username = 'root';
-$password = '';
+$password = 'Lolamarsh@123';
 
 try {
     $conn = new PDO("mysql:host=$host;dbname=$db_name", $username, $password);
