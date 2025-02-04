@@ -37,7 +37,7 @@ $stmt->execute();
 if ($stmt->fetchColumn() == 0) {
     echo json_encode([
         'success' => false,
-        'message' => 'Record not found',
+        'message' => ['id_number' => $idNumber, 'extracted_id' => $id],
         'debug' => ['id_number' => $idNumber, 'extracted_id' => $id]
     ]);
     exit();
