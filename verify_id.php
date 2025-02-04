@@ -23,8 +23,8 @@ function validateFile($file, $fieldName) {
         echo json_encode(['success' => false, 'message' => "$fieldName must be a JPG, JPEG, or PNG file"]);
         exit();
     }
-    if ($file['size'] > 2 * 1024 * 1024) { // Limit size to 2MB
-        echo json_encode(['success' => false, 'message' => "$fieldName must be less than 2MB"]);
+    if ($file['size'] > 5 * 1024 * 1024) { // Limit size to 2MB
+        echo json_encode(['success' => false, 'message' => "$fieldName must be less than 5MB"]);
         exit();
     }
 }
