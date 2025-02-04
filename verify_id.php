@@ -19,12 +19,14 @@ $check_in_id = $_POST['check_in_id'];
 function validateFile($file, $fieldName) {
     $allowedExtensions = ['jpg', 'jpeg', 'png'];
     $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    
     if (!in_array($extension, $allowedExtensions)) {
         echo json_encode(['success' => false, 'message' => "$fieldName must be a JPG, JPEG, or PNG file"]);
         exit();
     }
-    if ($file['size'] > 5 * 1024 * 1024) { // Limit size to 2MB
-        echo json_encode(['success' => false, 'message' => "$fieldName must be less than 2MB"]);
+    
+    if ($file['size'] > 5 * 1024 * 1024) { // Limit size to 5MB
+        echo json_encode(['success' => false, 'message' => "$fieldName must be less than 5MB"]);
         exit();
     }
 }
@@ -33,22 +35,40 @@ function validateFile($file, $fieldName) {
 validateFile($_FILES['id_card'], 'ID Card');
 validateFile($_FILES['selfie'], 'Selfie');
 
-// File upload paths
-$uploadDir = './uploads/';
+// Securely create the uploads directory if it does not exist
+$uploadDir = __DIR__ . '/uploads/'; // Use absolute path
 if (!is_dir($uploadDir)) {
-    mkdir($uploadDir, 0777, true); // Create the uploads directory if it doesn't exist
+    if (!mkdir($uploadDir, 0777, true) && !is_dir($uploadDir)) {
+        echo json_encode(['success' => false, 'message' => 'Failed to create upload directory. Check permissions.']);
+        exit();
+    }
 }
 
+// Set correct permissions for the uploads folder
+if (!chmod($uploadDir, 0777)) {
+    echo json_encode(['success' => false, 'message' => 'Failed to set permissions for upload directory']);
+    exit();
+}
+
+// Generate unique file paths
 $idCardPath = $uploadDir . 'id_card_' . time() . '_' . basename($_FILES['id_card']['name']);
 $selfiePath = $uploadDir . 'selfie_' . time() . '_' . basename($_FILES['selfie']['name']);
 
 // Move uploaded files
 if (!move_uploaded_file($_FILES['id_card']['tmp_name'], $idCardPath)) {
-    echo json_encode(['success' => false, 'message' => 'Failed to upload ID Card']);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Failed to upload ID Card',
+        'error' => error_get_last() // Capture system error message
+    ]);
     exit();
 }
 if (!move_uploaded_file($_FILES['selfie']['tmp_name'], $selfiePath)) {
-    echo json_encode(['success' => false, 'message' => 'Failed to upload Selfie']);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Failed to upload Selfie',
+        'error' => error_get_last()
+    ]);
     exit();
 }
 
