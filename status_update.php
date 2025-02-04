@@ -7,7 +7,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// Decode JSON input
 $data = json_decode(file_get_contents('php://input'), true);
 
 if (!isset($data['id_number'], $data['status'])) {
@@ -16,9 +15,8 @@ if (!isset($data['id_number'], $data['status'])) {
 }
 
 $idNumber = $data['id_number'];
-$status = strtolower(trim($data['status'])); // Normalize status input
+$status = strtolower(trim($data['status']));
 
-// Validate status to be either 'approved' or 'rejected'
 $validStatuses = ['approved', 'rejected'];
 if (!in_array($status, $validStatuses)) {
     echo json_encode(['success' => false, 'message' => 'Invalid status value']);
@@ -28,28 +26,31 @@ if (!in_array($status, $validStatuses)) {
 // Extract numeric ID
 $id = intval(preg_replace('/[^0-9]/', '', $idNumber));
 
-try {
-    // Check if the ID exists
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM check_ins WHERE id = :id");
-    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-    $stmt->execute();
-    
-    if ($stmt->fetchColumn() == 0) {
-        echo json_encode(['success' => false, 'message' => 'Record not found']);
-        exit();
-    }
+// Debugging output
+error_log("Received id_number: $idNumber, Extracted ID: $id");
 
-    // Update the status in the database
-    $stmt = $conn->prepare("UPDATE check_ins SET status = :status WHERE id = :id");
-    $stmt->bindParam(':status', $status, PDO::PARAM_STR);
-    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+// Check if the ID exists
+$stmt = $conn->prepare("SELECT COUNT(*) FROM check_ins WHERE id = :id");
+$stmt->bindParam(':id', $id, PDO::PARAM_INT);
+$stmt->execute();
 
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Status updated successfully']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to update status']);
-    }
-} catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+if ($stmt->fetchColumn() == 0) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Record not found',
+        'debug' => ['id_number' => $idNumber, 'extracted_id' => $id]
+    ]);
+    exit();
+}
+
+// Update the status in the database
+$stmt = $conn->prepare("UPDATE check_ins SET status = :status WHERE id = :id");
+$stmt->bindParam(':status', $status, PDO::PARAM_STR);
+$stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+if ($stmt->execute()) {
+    echo json_encode(['success' => true, 'message' => 'Status updated successfully']);
+} else {
+    echo json_encode(['success' => false, 'message' => 'Failed to update status']);
 }
 ?>
