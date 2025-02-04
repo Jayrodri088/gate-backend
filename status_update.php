@@ -23,8 +23,13 @@ if (!in_array($status, $validStatuses)) {
     exit();
 }
 
-// Extract numeric ID
-$id = intval(preg_replace('/[^0-9]/', '', $idNumber));
+// Extract only the FIRST numeric value from id_number
+if (preg_match('/^\d+/', $idNumber, $matches)) {
+    $id = intval($matches[0]); // Get only the first numeric sequence
+} else {
+    echo json_encode(['success' => false, 'message' => 'Invalid ID format']);
+    exit();
+}
 
 // Debugging output
 error_log("Received id_number: $idNumber, Extracted ID: $id");
