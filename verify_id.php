@@ -37,6 +37,7 @@ validateFile($_FILES['selfie'], 'Selfie');
 $uploadDir = './uploads/';
 if (!is_dir($uploadDir)) {
     if (!mkdir($uploadDir, 0777, true)) {
+        error_log("Failed to create directory: " . $uploadDir);
         echo json_encode(['success' => false, 'message' => 'Failed to create uploads directory']);
         exit();
     }
@@ -44,6 +45,7 @@ if (!is_dir($uploadDir)) {
 
 // Ensure the uploads directory is writable
 if (!is_writable($uploadDir)) {
+    error_log("Uploads directory is not writable: " . $uploadDir);
     echo json_encode(['success' => false, 'message' => 'Uploads directory is not writable']);
     exit();
 }
@@ -51,12 +53,17 @@ if (!is_writable($uploadDir)) {
 $idCardPath = $uploadDir . 'id_card_' . time() . '_' . basename($_FILES['id_card']['name']);
 $selfiePath = $uploadDir . 'selfie_' . time() . '_' . basename($_FILES['selfie']['name']);
 
+// Debugging: Print file upload details
+error_log(print_r($_FILES, true));
+
 // Move uploaded files
 if (!move_uploaded_file($_FILES['id_card']['tmp_name'], $idCardPath)) {
+    error_log("Failed to move ID Card: " . $_FILES['id_card']['tmp_name'] . " to " . $idCardPath);
     echo json_encode(['success' => false, 'message' => 'Failed to upload ID Card']);
     exit();
 }
 if (!move_uploaded_file($_FILES['selfie']['tmp_name'], $selfiePath)) {
+    error_log("Failed to move Selfie: " . $_FILES['selfie']['tmp_name'] . " to " . $selfiePath);
     echo json_encode(['success' => false, 'message' => 'Failed to upload Selfie']);
     exit();
 }
