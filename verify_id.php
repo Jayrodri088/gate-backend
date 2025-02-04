@@ -34,7 +34,7 @@ validateFile($_FILES['id_card'], 'ID Card');
 validateFile($_FILES['selfie'], 'Selfie');
 
 // File upload paths
-$uploadDir = '/uploads/';
+$uploadDir = './uploads/';
 if (!is_dir($uploadDir)) {
     if (!mkdir($uploadDir, 0777, true)) {
         error_log("Failed to create directory: " . $uploadDir);
