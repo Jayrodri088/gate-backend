@@ -11,10 +11,11 @@ if (!isset(
     $data['email'], 
     $data['address'], 
     $data['phone'], 
-    $data['visit_intent'], 
-    $data['personal_effect'], 
+    $data['intend_to_visit'], 
+    $data['personal_effects'], 
     $data['visit_purpose'], 
-    $data['appointment_details']
+    $data['appointment_details'],
+    $data['reception']
 )) {
     echo json_encode(['success' => false, 'message' => 'Missing required fields']);
     exit();
@@ -25,10 +26,14 @@ $full_name = trim($data['full_name']);
 $email = trim($data['email']);
 $address = trim($data['address']);
 $phone = trim($data['phone']);
-$visit_intent = trim($data['visit_intent']);
-$personal_effect = trim($data['personal_effect']);
+$intend_to_visit = trim($data['intend_to_visit']);
+$personal_effects = json_encode($data['personal_effects']); // Array of effects
 $visit_purpose = trim($data['visit_purpose']);
 $appointment_details = trim($data['appointment_details']);
+$reception = trim($data['reception']);
+
+// Determine role based on reception
+$role = ($reception === 'GOSS') ? 'goss' : 'admin';
 
 // Basic validation
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -64,9 +69,31 @@ try {
 
     // Insert check-in record into database
     $stmt = $conn->prepare("INSERT INTO check_ins (
-        code, full_name, email, address, phone, visit_intent, personal_effect, visit_purpose, appointment_details, status
+        code, 
+        full_name, 
+        email, 
+        address, 
+        phone, 
+        intend_to_visit, 
+        personal_effects, 
+        visit_purpose, 
+        appointment_details, 
+        reception,
+        role,
+        status
     ) VALUES (
-        :code, :full_name, :email, :address, :phone, :visit_intent, :personal_effect, :visit_purpose, :appointment_details, 'pending'
+        :code, 
+        :full_name, 
+        :email, 
+        :address, 
+        :phone, 
+        :intend_to_visit, 
+        :personal_effects, 
+        :visit_purpose, 
+        :appointment_details, 
+        :reception,
+        :role,
+        'pending'
     )");
 
     $stmt->bindParam(':code', $uniqueCode);
@@ -74,10 +101,12 @@ try {
     $stmt->bindParam(':email', $email);
     $stmt->bindParam(':address', $address);
     $stmt->bindParam(':phone', $phone);
-    $stmt->bindParam(':visit_intent', $visit_intent);
-    $stmt->bindParam(':personal_effect', $personal_effect);
+    $stmt->bindParam(':intend_to_visit', $intend_to_visit);
+    $stmt->bindParam(':personal_effects', $personal_effects);
     $stmt->bindParam(':visit_purpose', $visit_purpose);
     $stmt->bindParam(':appointment_details', $appointment_details);
+    $stmt->bindParam(':reception', $reception);
+    $stmt->bindParam(':role', $role);
 
     if ($stmt->execute()) {
         // Retrieve the ID of the newly inserted entry
@@ -86,7 +115,8 @@ try {
             'success' => true, 
             'message' => 'Check-in recorded successfully', 
             'code' => $uniqueCode, 
-            'id' => $lastInsertId
+            'id' => $lastInsertId,
+            'role' => $role
         ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to record check-in']);
