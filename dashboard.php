@@ -35,17 +35,17 @@ try {
     // Get pending check-in requests
     if ($userRole === 'gate') {
         // If role is 'gate', fetch 3 latest pending entries (any role)
-        $stmt = $conn->prepare("SELECT id, full_name, visit_purpose, code, reception, created_at FROM check_ins WHERE status = 'pending' ORDER BY created_at DESC LIMIT 3");
+        $stmt = $conn->prepare("SELECT id, full_name, visit_purpose, code, reception, selfie_path, created_at FROM check_ins WHERE status = 'pending' ORDER BY created_at DESC LIMIT 3");
     } else {
         // If not 'gate', fetch 3 latest pending entries for the user's role
-        $stmt = $conn->prepare("SELECT id, full_name, visit_purpose, code, reception, created_at FROM check_ins WHERE status = 'pending' AND role = :user_role ORDER BY created_at DESC LIMIT 3");
+        $stmt = $conn->prepare("SELECT id, full_name, visit_purpose, code, reception, selfie_path, created_at FROM check_ins WHERE status = 'pending' AND role = :user_role ORDER BY created_at DESC LIMIT 3");
         $stmt->bindParam(':user_role', $userRole, PDO::PARAM_STR);
     }
     $stmt->execute();
     $pendingEntries = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Get 3 latest check-in entries (Recent Visitors)
-    $stmt = $conn->prepare("SELECT id, full_name, visit_purpose, code, reception, created_at FROM check_ins WHERE status = 'approved' ORDER BY created_at DESC LIMIT 3");
+    $stmt = $conn->prepare("SELECT id, full_name, visit_purpose, code, reception, selfie_path, created_at FROM check_ins WHERE status = 'approved' ORDER BY created_at DESC LIMIT 3");
     $stmt->execute();
     $recentVisitors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -60,6 +60,7 @@ try {
             $entry['combined_code'] = $entry['id'] . $entry['code'];
             // Use reception as location
             $entry['location'] = $entry['reception'];
+            // Pass selfie_path directly (Flutter will handle it)
         }
         return $entries;
     }
