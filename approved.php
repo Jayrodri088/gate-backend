@@ -7,9 +7,30 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit();
 }
 
+// Get role from request (if provided)
+$role = isset($_GET['role']) ? trim($_GET['role']) : null;
+
 try {
-    // Fetch approved entries
-    $stmt = $conn->prepare("SELECT id, code, full_name, selfie_path, visit_purpose, created_at FROM check_ins WHERE status = 'approved'");
+    if ($role) {
+        // Check if any approved entries exist for this role
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM check_ins WHERE status = 'approved' AND role = :role");
+        $stmt->bindParam(':role', $role, PDO::PARAM_STR);
+        $stmt->execute();
+        $roleExists = $stmt->fetchColumn() > 0;
+
+        if ($roleExists) {
+            // Fetch only entries that match the given role
+            $stmt = $conn->prepare("SELECT id, code, full_name, selfie_path, visit_purpose, created_at FROM check_ins WHERE status = 'approved' AND role = :role");
+            $stmt->bindParam(':role', $role, PDO::PARAM_STR);
+        } else {
+            // If no matching role entries exist, fetch all approved entries
+            $stmt = $conn->prepare("SELECT id, code, full_name, selfie_path, visit_purpose, created_at FROM check_ins WHERE status = 'approved'");
+        }
+    } else {
+        // Fetch all approved entries if no role is provided
+        $stmt = $conn->prepare("SELECT id, code, full_name, selfie_path, visit_purpose, created_at FROM check_ins WHERE status = 'approved'");
+    }
+
     $stmt->execute();
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
