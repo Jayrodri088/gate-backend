@@ -61,6 +61,7 @@ try {
             // Use reception as location
             $entry['location'] = $entry['reception'];
             // Pass selfie_path directly (Flutter will handle it)
+            $entry['profile'] = $entry['selfie_path'];
         }
         return $entries;
     }
