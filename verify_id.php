@@ -23,7 +23,7 @@ function validateFile($file, $fieldName) {
         echo json_encode(['success' => false, 'message' => "$fieldName must be a JPG, JPEG, or PNG file"]);
         exit();
     }
-    if ($file['size'] > 5 * 1024 * 1024) { // Limit size to 2MB
+    if ($file['size'] > 5 * 1024 * 1024) { // Limit size to 5MB
         echo json_encode(['success' => false, 'message' => "$fieldName must be less than 5MB"]);
         exit();
     }
@@ -50,6 +50,7 @@ if (!is_writable($uploadDir)) {
     exit();
 }
 
+// Generate unique file names
 $idCardPath = $uploadDir . 'id_card_' . time() . '_' . basename($_FILES['id_card']['name']);
 $selfiePath = $uploadDir . 'selfie_' . time() . '_' . basename($_FILES['selfie']['name']);
 
@@ -76,7 +77,27 @@ try {
     $stmt->bindParam(':check_in_id', $check_in_id);
 
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Identity verification completed']);
+        // Retrieve the role & full name for notifications
+        $stmt = $conn->prepare("SELECT role, full_name, visit_purpose FROM check_ins WHERE id = :check_in_id");
+        $stmt->bindParam(':check_in_id', $check_in_id);
+        $stmt->execute();
+        $checkinData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($checkinData) {
+            $role = $checkinData['role'];
+            $visitorName = $checkinData['full_name'];
+            $visitPurpose = $checkinData['visit_purpose'];
+
+            // Create a notification
+            $notificationMessage = "New visitor: $visitorName for $visitPurpose.";
+            $stmt = $conn->prepare("INSERT INTO notifications (role, message, selfie_path) VALUES (:role, :message, :selfie)");
+            $stmt->bindParam(':role', $role);
+            $stmt->bindParam(':message', $notificationMessage);
+            $stmt->bindParam(':selfie', $selfiePath);
+            $stmt->execute();
+        }
+
+        echo json_encode(['success' => true, 'message' => 'Identity verification completed and notification sent']);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to update check-in record']);
     }
